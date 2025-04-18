@@ -7,12 +7,17 @@ import asyncio
 import time
 
 from brand_monitoring_flow.crews.youtube_crew.youtube_crew import YoutubeCrew, YoutubeReport, YoutubeWriterReport
-from brand_monitoring_flow.crews.instagram_crew.instagram_crew import InstagramCrew, InstagramReport, InstagramWriterReport
+from brand_monitoring_flow.crews.instagram_crew.instagram_crew import (
+    InstagramCrew,
+    InstagramReport,
+    InstagramWriterReport
+)
 from brand_monitoring_flow.crews.linkedin_crew.linkedin_crew import LinkedInCrew, LinkedInReport, LinkedInWriterReport
 from brand_monitoring_flow.crews.web_crew.web_crew import WebCrew, WebReport, WebWriterReport
 from brand_monitoring_flow.crews.X_crew.X_crew import XCrew, XReport, XWriterReport
 
 from brand_monitoring_flow.tools.custom_tool import BrightDataWebSearchTool, scrape_urls
+
 
 class BrandMonitoringState(BaseModel):
     total_results: int = 15
@@ -36,12 +41,13 @@ class BrandMonitoringState(BaseModel):
     youtube_filtered_scrape_response: list[dict] = []
     x_filtered_scrape_response: list[dict] = []
     web_filtered_scrape_response: list[dict] = []
-    
+
     linkedin_crew_response: LinkedInReport = None
     instagram_crew_response: InstagramReport = None
     youtube_crew_response: YoutubeReport = None
     x_crew_response: XReport = None
     web_crew_response: WebReport = None
+
 
 class BrandMonitoringFlow(Flow[BrandMonitoringState]):
 
@@ -50,6 +56,7 @@ class BrandMonitoringFlow(Flow[BrandMonitoringState]):
         print(f"Scraping Data about {self.state.brand_name}")
         web_search_tool = BrightDataWebSearchTool()
         self.state.search_response = web_search_tool._run(self.state.brand_name, total_results=self.state.total_results)
+        print(self.state.search_response)
 
         for r in self.state.search_response:
             if "linkedin.com" in r['link'].lower():
@@ -91,9 +98,10 @@ class BrandMonitoringFlow(Flow[BrandMonitoringState]):
                     })
 
                 linkedin_crew = LinkedInCrew()
-                self.state.linkedin_crew_response = linkedin_crew.crew().kickoff(inputs={"linkedin_data": self.state.linkedin_filtered_scrape_response, 
-                                                                                "brand_name": self.state.brand_name})
-        
+                self.state.linkedin_crew_response = linkedin_crew.crew().kickoff(
+                    inputs={"linkedin_data": self.state.linkedin_filtered_scrape_response,
+                            "brand_name": self.state.brand_name})
+
         async def instagram_analysis():
             if self.state.instagram_search_response:
                 instagram_urls = [r['link'] for r in self.state.instagram_search_response]
@@ -118,8 +126,9 @@ class BrandMonitoringFlow(Flow[BrandMonitoringState]):
                     })
 
                 instagram_crew = InstagramCrew()
-                self.state.instagram_crew_response = instagram_crew.crew().kickoff(inputs={"instagram_data": self.state.instagram_filtered_scrape_response,
-                                                                                    "brand_name": self.state.brand_name})
+                self.state.instagram_crew_response = instagram_crew.crew().kickoff(
+                    inputs={"instagram_data": self.state.instagram_filtered_scrape_response,
+                            "brand_name": self.state.brand_name})
 
         async def youtube_analysis():
             if self.state.youtube_search_response:
@@ -128,8 +137,8 @@ class BrandMonitoringFlow(Flow[BrandMonitoringState]):
                 print(youtube_urls)
 
                 youtube_params = {"dataset_id": "gd_lk56epmy2i5g7lzu0k",
-                                "include_errors": "true"} 
-                
+                                  "include_errors": "true"}
+
                 self.state.youtube_scrape_response = scrape_urls(youtube_urls, youtube_params, "youtube")
 
                 for i in self.state.youtube_scrape_response:
@@ -146,8 +155,9 @@ class BrandMonitoringFlow(Flow[BrandMonitoringState]):
                     })
 
                 youtube_crew = YoutubeCrew()
-                self.state.youtube_crew_response = youtube_crew.crew().kickoff(inputs={"youtube_data": self.state.youtube_filtered_scrape_response, 
-                                                                                "brand_name": self.state.brand_name})
+                self.state.youtube_crew_response = youtube_crew.crew().kickoff(
+                    inputs={"youtube_data": self.state.youtube_filtered_scrape_response,
+                            "brand_name": self.state.brand_name})
 
         async def x_analysis():
             if self.state.x_search_response:
@@ -176,8 +186,9 @@ class BrandMonitoringFlow(Flow[BrandMonitoringState]):
                     })
 
                 x_crew = XCrew()
-                self.state.x_crew_response = x_crew.crew().kickoff(inputs={"x_data": self.state.x_filtered_scrape_response,
-                                                                    "brand_name": self.state.brand_name})
+                self.state.x_crew_response = x_crew.crew().kickoff(
+                    inputs={"x_data": self.state.x_filtered_scrape_response,
+                            "brand_name": self.state.brand_name})
 
         async def web_analysis():
             if self.state.web_search_response:
@@ -203,8 +214,9 @@ class BrandMonitoringFlow(Flow[BrandMonitoringState]):
                     })
 
                 web_crew = WebCrew()
-                self.state.web_crew_response = web_crew.crew().kickoff(inputs={"web_data": self.state.web_filtered_scrape_response,
-                                                                               "brand_name": self.state.brand_name})
+                self.state.web_crew_response = web_crew.crew().kickoff(
+                    inputs={"web_data": self.state.web_filtered_scrape_response,
+                            "brand_name": self.state.brand_name})
 
         tasks = [
             asyncio.create_task(linkedin_analysis()),
@@ -219,7 +231,7 @@ class BrandMonitoringFlow(Flow[BrandMonitoringState]):
 
         print("Collected data from all sources")
 
-        if self.state.linkedin_crew_response:   
+        if self.state.linkedin_crew_response:
             for r in self.state.linkedin_crew_response.pydantic.content:
                 print(r.post_title)
                 print(r.post_link)
@@ -227,7 +239,7 @@ class BrandMonitoringFlow(Flow[BrandMonitoringState]):
                     print("- " + c)
                 print("\n")
 
-        if self.state.instagram_crew_response:  
+        if self.state.instagram_crew_response:
             for r in self.state.instagram_crew_response.pydantic.content:
                 print(r.post_title)
                 print(r.post_link)
@@ -242,7 +254,7 @@ class BrandMonitoringFlow(Flow[BrandMonitoringState]):
                 for c in r.content_lines:
                     print("- " + c)
                 print("\n")
-        
+
         if self.state.x_crew_response:
             for r in self.state.x_crew_response.pydantic.content:
                 print(r.post_title)

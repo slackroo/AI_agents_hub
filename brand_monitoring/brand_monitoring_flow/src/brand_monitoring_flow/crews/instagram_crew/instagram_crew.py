@@ -15,7 +15,18 @@ class InstagramReport(BaseModel):
                                                               "The size of the output list will be the same as the number of posts in the input data.")
                                                               )
 
-llm = LLM(model="ollama/deepseek-r1")
+# llm = LLM(model="ollama/deepseek-r1")
+
+llm = LLM(
+    model="openai/gpt-4o-mini", # call model by provider/model_name
+    temperature=0.7,
+    # max_tokens=1000,
+    top_p=0.9,
+    frequency_penalty=0.1,
+    presence_penalty=0.1,
+    stop=["END"],
+    seed=42
+)
 
 @CrewBase
 class InstagramCrew:
